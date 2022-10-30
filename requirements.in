@@ -2,3 +2,5 @@ ipython
 psutil
 maturin
 pip-tools
+
+pytest
