@@ -17,4 +17,5 @@ def test_mem_maps():
 
 
 def test_scanner():
-    scanner = medit_rs.gen_scanner()
+    scanner = medit_rs.gen_scanner(os.getpid())
+    assert scanner

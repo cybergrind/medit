@@ -5,7 +5,8 @@ use pyo3::{
 };
 use std::collections::HashMap;
 //use scanflow::value_scanner::ValueScanner;
-//use memflow::prelude::v1::*;
+use memflow::prelude::v1::*;
+
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
@@ -36,6 +37,14 @@ struct PyScanner {
 impl PyScanner {
     #[new]
     fn new(pid: Option<u32>) -> Self {
+        let chain = OsChain::new([].into_iter(), [(6, "native")].into_iter()).unwrap();
+        let inv = Inventory::scan();
+        let mut os = inv.builder().os_chain(chain).build().unwrap();
+        let process_list = os.process_info_list().unwrap();
+        let mut proc  = os.into_process_by_pid(pid.unwrap()).unwrap();
+        let p = proc.info();
+        println!("Process: {} {} {} {:?}", p.pid, p.name, p.command_line, p.state);
+
         PyScanner {
             //process: Process{},
             //value_scanner: Default::default()
@@ -45,9 +54,9 @@ impl PyScanner {
 }
 
 #[pyfunction]
-fn gen_scanner() -> PyResult<Py<PyScanner>> {
+fn gen_scanner(pid: Option<u32>) -> PyResult<Py<PyScanner>> {
     Python::with_gil(|py| {
-        return Py::new(py, PyScanner::new(None));
+        return Py::new(py, PyScanner::new(pid));
     })
 }
 
