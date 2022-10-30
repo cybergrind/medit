@@ -4,6 +4,8 @@ use pyo3::{
     types::{IntoPyDict, PyDict},
 };
 use std::collections::HashMap;
+//use scanflow::value_scanner::ValueScanner;
+//use memflow::prelude::v1::*;
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
@@ -24,6 +26,31 @@ fn get_mem_maps(pid_int: i32) -> PyResult<Py<PyDict>> {
     Python::with_gil(|py| -> PyResult<Py<PyDict>> { Ok(resp.into_py_dict(py).into_py(py)) })
 }
 
+#[pyclass]
+struct PyScanner {
+    //process: Process,
+    //value_scanner: ValueScanner
+}
+
+#[pymethods]
+impl PyScanner {
+    #[new]
+    fn new(pid: Option<u32>) -> Self {
+        PyScanner {
+            //process: Process{},
+            //value_scanner: Default::default()
+        }
+    }
+
+}
+
+#[pyfunction]
+fn gen_scanner() -> PyResult<Py<PyScanner>> {
+    Python::with_gil(|py| {
+        return Py::new(py, PyScanner::new(None));
+    })
+}
+
 #[pyfunction]
 fn test_binary(binary: &[u8]) -> PyResult<&[u8]> {
     println!("Got test: {:?}", binary);
@@ -36,5 +63,6 @@ fn medit_rs(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     m.add_function(wrap_pyfunction!(get_mem_maps, m)?)?;
     m.add_function(wrap_pyfunction!(test_binary, m)?)?;
+    m.add_function(wrap_pyfunction!(gen_scanner, m)?)?;
     Ok(())
 }
