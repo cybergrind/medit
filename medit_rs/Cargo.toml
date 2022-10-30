@@ -10,3 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.17.1", features = ["extension-module"] }
+process-memory = "0.5.0"
+proc-maps = "0.3.0"
+libproc = "0.12.0"
+scanflow = "0.1.1"
