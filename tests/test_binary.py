@@ -1,3 +1,4 @@
+import os
 import medit_rs
 
 def test_binary():
@@ -5,3 +6,9 @@ def test_binary():
     returned = medit_rs.test_binary(b)
     assert returned == b
     assert id(returned) != id(b)
+
+def test_mem_maps():
+    pid = os.getpid()
+    maps = medit_rs.get_mem_maps(pid)
+    assert maps != {}
+
