@@ -7,6 +7,7 @@ use std::collections::HashMap;
 //use scanflow::value_scanner::ValueScanner;
 use memflow::prelude::v1::*;
 
+use std::prelude::v1::*;
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
@@ -27,9 +28,10 @@ fn get_mem_maps(pid_int: i32) -> PyResult<Py<PyDict>> {
     Python::with_gil(|py| -> PyResult<Py<PyDict>> { Ok(resp.into_py_dict(py).into_py(py)) })
 }
 
-#[pyclass]
+
+#[pyclass(unsendable)]
 struct PyScanner {
-    //process: Process,
+    process: &'static dyn Process,
     //value_scanner: ValueScanner
 }
 
@@ -39,18 +41,20 @@ impl PyScanner {
     fn new(pid: Option<u32>) -> Self {
         let chain = OsChain::new([].into_iter(), [(6, "native")].into_iter()).unwrap();
         let inv = Inventory::scan();
-        let mut os = inv.builder().os_chain(chain).build().unwrap();
-        let process_list = os.process_info_list().unwrap();
-        let mut proc  = os.into_process_by_pid(pid.unwrap()).unwrap();
+        let os = inv.builder().os_chain(chain).build().unwrap();
+        //let process_list = os.process_info_list().unwrap();
+        let proc = os.into_process_by_pid(pid.unwrap()).unwrap();
         let p = proc.info();
-        println!("Process: {} {} {} {:?}", p.pid, p.name, p.command_line, p.state);
+        println!(
+            "Process: {} {} {} {:?}",
+            p.pid, p.name, p.command_line, p.state
+        );
 
         PyScanner {
-            //process: Process{},
+            process: Box::leak(Box::new(proc)),
             //value_scanner: Default::default()
         }
     }
-
 }
 
 #[pyfunction]

@@ -19,8 +19,8 @@ proc-maps = "0.3.0"
 #proc-macro2 = "=1.0.40"
 
 #cc = "=1.0.73"
-bumpalo = "=3.10.0"
-memflow = { version = "^0.2.0-beta" }
+#bumpalo = "=3.10.0"
+memflow = { version = "^0.2.0-beta8" }
 memflow-native = "0.2.0-beta7"
 
 [features]
