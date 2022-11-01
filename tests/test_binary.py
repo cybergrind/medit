@@ -17,5 +17,9 @@ def test_mem_maps():
 
 
 def test_scanner():
-    scanner = medit_rs.gen_scanner(os.getpid())
+    b = b'iabinary'
+    scanner = medit_rs.PyScanner(os.getpid())
     assert scanner
+    # 32:32 + len(b)
+    found = bytes(scanner.read(id(b), 40))[32:40]
+    assert found == b

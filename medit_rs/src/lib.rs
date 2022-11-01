@@ -1,19 +1,13 @@
+use memflow::plugins::os::IntoProcessInstance;
+use memflow::prelude::v1::*;
 use proc_maps::get_process_maps;
 use pyo3::{
     prelude::*,
     types::{IntoPyDict, PyDict},
 };
 use std::collections::HashMap;
-//use scanflow::value_scanner::ValueScanner;
-use memflow::prelude::v1::*;
 
 use std::prelude::v1::*;
-
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
-}
 
 #[pyfunction]
 fn get_mem_maps(pid_int: i32) -> PyResult<Py<PyDict>> {
@@ -28,12 +22,16 @@ fn get_mem_maps(pid_int: i32) -> PyResult<Py<PyDict>> {
     Python::with_gil(|py| -> PyResult<Py<PyDict>> { Ok(resp.into_py_dict(py).into_py(py)) })
 }
 
-
 #[pyclass(unsendable)]
 struct PyScanner {
-    process: &'static dyn Process,
-    //value_scanner: ValueScanner
+    process: &'static mut TT,
 }
+
+type TT = IntoProcessInstance<
+    'static,
+    CBox<'static, trait_group::c_void>,
+    CArc<trait_group::c_void>,
+>;
 
 #[pymethods]
 impl PyScanner {
@@ -42,26 +40,16 @@ impl PyScanner {
         let chain = OsChain::new([].into_iter(), [(6, "native")].into_iter()).unwrap();
         let inv = Inventory::scan();
         let os = inv.builder().os_chain(chain).build().unwrap();
-        //let process_list = os.process_info_list().unwrap();
         let proc = os.into_process_by_pid(pid.unwrap()).unwrap();
-        let p = proc.info();
-        println!(
-            "Process: {} {} {} {:?}",
-            p.pid, p.name, p.command_line, p.state
-        );
-
         PyScanner {
             process: Box::leak(Box::new(proc)),
-            //value_scanner: Default::default()
         }
     }
-}
 
-#[pyfunction]
-fn gen_scanner(pid: Option<u32>) -> PyResult<Py<PyScanner>> {
-    Python::with_gil(|py| {
-        return Py::new(py, PyScanner::new(pid));
-    })
+    fn read(&mut self, addr: i64, size: Option<usize>) -> PyResult<Vec<u8>> {
+        let resp = self.process.read_raw(Address::from(addr), size.unwrap_or(8));
+        Ok(resp.unwrap())
+    }
 }
 
 #[pyfunction]
@@ -73,9 +61,8 @@ fn test_binary(binary: &[u8]) -> PyResult<&[u8]> {
 /// A Python module implemented in Rust.
 #[pymodule]
 fn medit_rs(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     m.add_function(wrap_pyfunction!(get_mem_maps, m)?)?;
     m.add_function(wrap_pyfunction!(test_binary, m)?)?;
-    m.add_function(wrap_pyfunction!(gen_scanner, m)?)?;
+    m.add_class::<PyScanner>()?;
     Ok(())
 }
