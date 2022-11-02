@@ -5,6 +5,7 @@ use pyo3::{
     prelude::*,
     types::{IntoPyDict, PyDict},
 };
+use scanflow::value_scanner::ValueScanner;
 use std::collections::HashMap;
 
 use std::prelude::v1::*;
@@ -27,11 +28,8 @@ struct PyScanner {
     process: &'static mut TT,
 }
 
-type TT = IntoProcessInstance<
-    'static,
-    CBox<'static, trait_group::c_void>,
-    CArc<trait_group::c_void>,
->;
+type TT =
+    IntoProcessInstance<'static, CBox<'static, trait_group::c_void>, CArc<trait_group::c_void>>;
 
 #[pymethods]
 impl PyScanner {
@@ -47,8 +45,22 @@ impl PyScanner {
     }
 
     fn read(&mut self, addr: i64, size: Option<usize>) -> PyResult<Vec<u8>> {
-        let resp = self.process.read_raw(Address::from(addr), size.unwrap_or(8));
+        let resp = self
+            .process
+            .read_raw(Address::from(addr), size.unwrap_or(8));
         Ok(resp.unwrap())
+    }
+
+    fn search(&mut self, pattern: &[u8]) -> PyResult<Vec<u64>> {
+        let mut scanner: ValueScanner = Default::default();
+        scanner.reset();
+        scanner.scan_for(self.process, pattern).unwrap();
+        return Ok(scanner
+            .matches()
+            .clone()
+            .iter()
+            .map(|x| x.to_umem())
+            .collect());
     }
 }
 

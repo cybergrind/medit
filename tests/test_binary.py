@@ -20,6 +20,14 @@ def test_scanner():
     b = b'iabinary'
     scanner = medit_rs.PyScanner(os.getpid())
     assert scanner
+    addr = id(b)
     # 32:32 + len(b)
-    found = bytes(scanner.read(id(b), 40))[32:40]
+    found = bytes(scanner.read(addr, 40))[32:40]
     assert found == b
+    found = scanner.search(b'iabinary')
+    target = addr + 32
+    for addr in found:
+        if addr == target:
+            break
+    else:
+        assert False, f'{found=} vs {target=}'
