@@ -35,3 +35,4 @@ def test_scanner():
     scanner.write(target, b'a')
     found = scanner.filter(b'aabinary')
     assert found == [target]
+    assert b == b'aabinary'
