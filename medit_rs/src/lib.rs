@@ -26,6 +26,7 @@ fn get_mem_maps(pid_int: i32) -> PyResult<Py<PyDict>> {
 #[pyclass(unsendable)]
 struct PyScanner {
     process: &'static mut TT,
+    scanner: &'static mut ValueScanner,
 }
 
 type TT =
@@ -41,6 +42,7 @@ impl PyScanner {
         let proc = os.into_process_by_pid(pid.unwrap()).unwrap();
         PyScanner {
             process: Box::leak(Box::new(proc)),
+            scanner: Box::leak(Box::new(ValueScanner::default())),
         }
     }
 
@@ -52,15 +54,27 @@ impl PyScanner {
     }
 
     fn search(&mut self, pattern: &[u8]) -> PyResult<Vec<u64>> {
-        let mut scanner: ValueScanner = Default::default();
-        scanner.reset();
-        scanner.scan_for(self.process, pattern).unwrap();
-        return Ok(scanner
+        self.scanner.reset();
+        self.scanner.scan_for(self.process, pattern).unwrap();
+        return Ok(self.scanner
             .matches()
-            .clone()
             .iter()
             .map(|x| x.to_umem())
             .collect());
+    }
+
+    fn filter(&mut self, pattern: &[u8]) -> PyResult<Vec<u64>> {
+        self.scanner.scan_for(self.process, pattern).unwrap();
+        return Ok(self.scanner
+            .matches()
+            .iter()
+            .map(|x| x.to_umem())
+            .collect());
+    }
+
+    fn write(&mut self, addr: i64, data: &[u8]) -> PyResult<()> {
+        self.process.write_raw(Address::from(addr), data).unwrap();
+        return Ok(());
     }
 }
 

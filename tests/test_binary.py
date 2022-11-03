@@ -31,3 +31,7 @@ def test_scanner():
             break
     else:
         assert False, f'{found=} vs {target=}'
+
+    scanner.write(target, b'a')
+    found = scanner.filter(b'aabinary')
+    assert found == [target]
